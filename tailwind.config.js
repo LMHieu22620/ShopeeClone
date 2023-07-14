@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
 const plugin = require('tailwindcss/plugin')
 
 /** @type {import('tailwindcss').Config} */
@@ -24,6 +25,7 @@ export default {
           paddingRight: theme('spacing.4')
         }
       })
-    })
+    }),
+    require('@tailwindcss/line-clamp')
   ]
 }

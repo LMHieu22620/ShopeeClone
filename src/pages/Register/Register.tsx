@@ -5,7 +5,7 @@ import { Link, useNavigate } from 'react-router-dom'
 
 import { Schema, schema } from 'src/utils/rules'
 import Input from 'src/components/Input'
-import { registerAccount } from 'src/apis/auth.api'
+import authApi from 'src/apis/auth.api'
 import { omit } from 'lodash'
 import { isAxiosUnprocessableEntityError } from 'src/utils/utils'
 import { ErrorReponseApi } from 'src/types/utils.file'
@@ -29,7 +29,7 @@ export default function Register() {
   })
 
   const registerAccountMutation = useMutation({
-    mutationFn: (body: Omit<FormData, 'confirm_password'>) => registerAccount(body)
+    mutationFn: (body: Omit<FormData, 'confirm_password'>) => authApi.registerAccount(body)
   })
 
   const onSubmit = handleSubmit((data) => {
