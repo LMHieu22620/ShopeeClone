@@ -20,7 +20,7 @@ export default function Input({
   classNameError = 'mt-1 min-h-[1.25rem] text-sm text-red-600',
   ...rest
 }: Props) {
-  const registerResult = register && name ? register(name, rules) : {}
+  const registerResult = register && name ? register(name, rules) : null
   return (
     <div className={className}>
       <input className={classNameInput} {...registerResult} {...rest} />
