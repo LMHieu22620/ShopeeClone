@@ -1,7 +1,6 @@
 import { Link, createSearchParams, useNavigate } from 'react-router-dom'
 import Button from 'src/components/Button'
 import path from 'src/constants/path'
-import { QueryConfig } from '../../ProductList'
 import { Category } from 'src/types/category.type'
 import classNames from 'classnames'
 import InputNumber from 'src/components/InputNumber'
@@ -11,6 +10,8 @@ import { yupResolver } from '@hookform/resolvers/yup'
 import { NoUndefineField } from 'src/types/utils.file'
 import { omit } from 'lodash'
 import RatingStart from '../RatingStart'
+import { QueryConfig } from 'src/hooks/useQueryConfig'
+import InputV2 from 'src/components/InputV2/InputV2'
 
 interface Props {
   queryConfig: QueryConfig
@@ -36,6 +37,8 @@ export default function AsideFilter({ queryConfig, categories }: Props) {
     resolver: yupResolver(priceSchema),
     shouldFocusError: false
   })
+  console.log(errors, 'errors')
+
   const navigate = useNavigate()
 
   const onSubmit = handleSubmit((data) => {
@@ -172,7 +175,7 @@ export default function AsideFilter({ queryConfig, categories }: Props) {
           <form className='mt-2' onSubmit={onSubmit}>
             <div className='flex items-center'>
               <div className='flex items-start'>
-                <Controller
+                {/* <Controller
                   control={control}
                   name='price_min'
                   render={({ field }) => {
@@ -191,6 +194,18 @@ export default function AsideFilter({ queryConfig, categories }: Props) {
                       />
                     )
                   }}
+                /> */}
+                <InputV2
+                  control={control}
+                  name='price_min'
+                  type='number'
+                  className='grow'
+                  placeholder='₫ TỪ'
+                  classNameInput='w-full rounded-sm border border-gray-300 p-1 outline-none focus:border-gray-500 focus:shadow-sm'
+                  onChange={() => {
+                    trigger('price_max')
+                  }}
+                  classNameError='hidden'
                 />
                 <div className='mx-2 mt-2 shrink-0'>-</div>
                 <Controller

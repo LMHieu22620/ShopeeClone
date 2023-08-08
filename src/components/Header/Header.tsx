@@ -1,149 +1,37 @@
-import { Link, createSearchParams, useNavigate } from 'react-router-dom'
-import Popover from '../Popover'
-import { useMutation } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { useContext } from 'react'
-import { AppContext } from 'src/contexts/app.context'
+import { Link } from 'react-router-dom'
+import purchaseApi from 'src/apis/purchase.api'
 import path from 'src/constants/path'
-import authApi from 'src/apis/auth.api'
-import useQueryConfig from 'src/hooks/useQueryConfig'
-import { useForm } from 'react-hook-form'
-import { Schema, schema } from 'src/utils/rules'
-import { yupResolver } from '@hookform/resolvers/yup'
-import { omit } from 'lodash'
+import { purchasesStatus } from 'src/constants/purchase'
+import { AppContext } from 'src/contexts/app.context'
+import useSearchProduct from 'src/hooks/useSearchProduct'
+import { formatCurrency } from 'src/utils/utils'
+import NavHeader from '../NavHeader/NavHeader'
+import Popover from '../Popover'
 
-type FormData = Pick<Schema, 'name'>
-
-const nameSchema = schema.pick(['name'])
+const MAX_PURCHASES = 5
 
 export default function Header() {
-  const queryConfig = useQueryConfig()
-  const navigate = useNavigate()
+  const { onSubmitSearch, register } = useSearchProduct()
 
-  const { handleSubmit, register } = useForm<FormData>({
-    defaultValues: {
-      name: ''
-    },
-    resolver: yupResolver(nameSchema)
-  })
-  const { setisAuthenticated, isAuthenticated, setProfile, profile } = useContext(AppContext)
-  const logoutMutation = useMutation({
-    mutationFn: authApi.logout,
-    onSuccess: () => {
-      setisAuthenticated(false)
-      setProfile(null)
-    }
-  })
-  const handleLogout = () => {
-    logoutMutation.mutate()
-  }
+  const { isAuthenticated } = useContext(AppContext)
 
-  const onSubmitSearch = handleSubmit((data) => {
-    const config = queryConfig.order
-      ? omit(
-          {
-            ...queryConfig,
-            name: data.name
-          },
-          ['order', 'sort_by']
-        )
-      : {
-          ...queryConfig,
-          name: data.name
-        }
-    navigate({
-      pathname: path.home,
-      search: createSearchParams(config).toString()
-    })
+  // khi chúng ta chuyển trang thì header chỉ bị rerender chứ không bị unmount -mounting again
+  //(tất nhiên là trừ trường hợp logout rồi nhảy sang register layout rồi nhảy vào lại )
+  //nên các query này nó sẽ không bị inActive => không bị gọi lại => không cần thiết phải set stale: infinity
+  const { data: purchasesInCartData } = useQuery({
+    queryKey: ['purchases', { status: purchasesStatus.inCart }],
+    queryFn: () => purchaseApi.getPurchases({ status: purchasesStatus.inCart }),
+    enabled: isAuthenticated
   })
+
+  const purchasesInCart = purchasesInCartData?.data.data
 
   return (
     <div className='bg-[linear-gradient(-180deg,#f53d2d,#f63)] pb-5 pt-2 text-white'>
       <div className='container'>
-        <div className='flex justify-end '>
-          <Popover
-            className='item-center flex cursor-pointer py-1 hover:text-white/70'
-            renderPopover={
-              <div className='flex flex-col rounded-sm border border-gray-200 px-3 py-2 shadow-md '>
-                <button className='px-3 py-2 hover:text-orange'>Tiếng việt </button>
-                <button className='mt-2 px-3 py-2 hover:text-orange'>English </button>
-              </div>
-            }
-          >
-            <svg
-              xmlns='http://www.w3.org/2000/svg'
-              fill='none'
-              viewBox='0 0 24 24'
-              strokeWidth={1.5}
-              stroke='currentColor'
-              className='h-5 w-5'
-            >
-              <path
-                strokeLinecap='round'
-                strokeLinejoin='round'
-                d='M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418'
-              />
-            </svg>
-            <span className='mx-1'>Tiếng việt</span>
-            <svg
-              xmlns='http://www.w3.org/2000/svg'
-              fill='none'
-              viewBox='0 0 24 24'
-              strokeWidth={1.5}
-              stroke='currentColor'
-              className='h-5 w-5'
-            >
-              <path strokeLinecap='round' strokeLinejoin='round' d='M19.5 8.25l-7.5 7.5-7.5-7.5' />
-            </svg>
-          </Popover>
-
-          {isAuthenticated && (
-            <Popover
-              className='item-center ml-6 flex cursor-pointer py-1 hover:text-white/70'
-              renderPopover={
-                <div className='flex flex-col rounded-sm border border-gray-200 px-3 py-2 shadow-md  '>
-                  <Link
-                    to={path.profile}
-                    className='block w-full bg-white px-3 py-2 text-left hover:bg-slate-100 hover:text-cyan-500'
-                  >
-                    Tài khoản của tôi
-                  </Link>
-                  <Link
-                    to={path.home}
-                    className='mt-2 block w-full bg-white px-3 py-2 text-left hover:bg-slate-100 hover:text-cyan-500'
-                  >
-                    Đơn mua{' '}
-                  </Link>
-                  <button
-                    className='mt-2 block w-full bg-white px-3 py-2 text-left hover:bg-slate-100 hover:text-cyan-500 '
-                    onClick={handleLogout}
-                  >
-                    Đăng xuất{' '}
-                  </button>
-                </div>
-              }
-            >
-              <div className='mr-2 h-6 w-6 flex-shrink-0'>
-                <img
-                  src='https://scontent.fdad1-3.fna.fbcdn.net/v/t39.30808-6/349310773_212072805015458_5958922781362229739_n.jpg?_nc_cat=110&ccb=1-7&_nc_sid=09cbfe&_nc_ohc=gSotCRD9wVcAX91dTkr&_nc_ht=scontent.fdad1-3.fna&oh=00_AfCseLFgfFSCyb5RZxT9VNY_Yvv0TJ3NGVIXFhCpPzhowQ&oe=6488A69E'
-                  alt=''
-                  className=' h-full w-full rounded-full object-cover'
-                />
-              </div>
-              <div>{profile?.email}</div>
-            </Popover>
-          )}
-          {!isAuthenticated && (
-            <div className='flex items-center'>
-              <Link to={path.register} className='mx-3 capitalize hover:text-white/70'>
-                Đăng ký
-              </Link>
-              <div className='h-4 border-r-[1px] border-r-white/40' />
-              <Link to={path.login} className='mx-3 capitalize hover:text-white/70'>
-                Đăng nhập
-              </Link>
-            </div>
-          )}
-        </div>
+        <NavHeader />
         <div className='mt-4 grid grid-cols-12 items-end gap-4'>
           <Link to={path.home} className='col-span-2'>
             <svg viewBox='0 0 192 65' className='h-11 w-full fill-white'>
@@ -183,87 +71,54 @@ export default function Header() {
               className='item-center flex cursor-pointer py-1 hover:text-white/70'
               placement='bottom-end'
               renderPopover={
-                <div className='max-w-[400px] bg-white'>
-                  <span className='flex w-full px-3 pb-3 pt-2 text-sm capitalize text-slate-400'>
-                    Sản Phẩm mới thêm
-                  </span>
-                  <div>
-                    <div className=' flex  px-3 py-2 hover:bg-stone-100'>
-                      <div className='flex-shrink-0 border'>
-                        <img
-                          src='https://down-vn.img.susercontent.com/file/ff8ba949f891ef060a474c7319c36fbe_tn'
-                          alt='anh'
-                          className='h-11 w-11 object-cover'
-                        />
-                      </div>
-                      <span className='flex-shrink-1 mx-2 truncate text-sm'>
-                        Áo sơ mi tay dài nam nữ dáng rộng cao cấp vải nhung tăm DAVUBA SM004
+                <div>
+                  {purchasesInCart ? (
+                    <div className='max-w-[400px] bg-white'>
+                      <span className='flex w-full px-3 pb-3 pt-2 text-sm capitalize text-slate-400'>
+                        Sản Phẩm mới thêm
                       </span>
-                      <span className='text-sm text-orange'>₫129.000</span>
-                    </div>
-                    <div className=' flex  px-3 py-2 hover:bg-stone-100'>
-                      <div className='flex-shrink-0 border'>
-                        <img
-                          src='https://down-vn.img.susercontent.com/file/ff8ba949f891ef060a474c7319c36fbe_tn'
-                          alt='anh'
-                          className='h-11 w-11 object-cover'
-                        />
+                      <div>
+                        {purchasesInCart.slice(0, MAX_PURCHASES).map((purchase) => (
+                          <div className=' flex  cursor-pointer px-3 py-2 hover:bg-stone-100' key={purchase._id}>
+                            <div className='flex-shrink-0 border'>
+                              <img
+                                src={purchase.product.image}
+                                alt={purchase.product.name}
+                                className='h-11 w-11 object-cover'
+                              />
+                            </div>
+                            <span className='flex-shrink-1 mx-2 truncate text-sm'>{purchase.product.name} </span>
+                            <span className='text-sm text-orange'>₫{formatCurrency(purchase.product.price)}</span>
+                          </div>
+                        ))}
                       </div>
-                      <span className='flex-shrink-1 mx-2 truncate text-sm'>
-                        Áo sơ mi tay dài nam nữ dáng rộng cao cấp vải nhung tăm DAVUBA SM004
-                      </span>
-                      <span className='text-sm text-orange'>₫129.000</span>
-                    </div>
-                    <div className=' flex  px-3 py-2 hover:bg-stone-100'>
-                      <div className='flex-shrink-0 border'>
-                        <img
-                          src='https://down-vn.img.susercontent.com/file/ff8ba949f891ef060a474c7319c36fbe_tn'
-                          alt='anh'
-                          className='h-11 w-11 object-cover'
-                        />
+                      <div className='mb-3 mt-5 flex items-center justify-between px-3'>
+                        <span className='text-sm capitalize text-slate-500'>
+                          {purchasesInCart.length > MAX_PURCHASES ? purchasesInCart.length - MAX_PURCHASES : ''} thêm
+                          hàng vào giỏ
+                        </span>
+                        <Link
+                          to={path.cart}
+                          className='rounded-sm bg-orange px-4 py-3 capitalize text-white hover:bg-red-400'
+                        >
+                          xem giỏ hàng
+                        </Link>
                       </div>
-                      <span className='flex-shrink-1 mx-2 truncate text-sm'>
-                        Áo sơ mi tay dài nam nữ dáng rộng cao cấp vải nhung tăm DAVUBA SM004
-                      </span>
-                      <span className='text-sm text-orange'>₫129.000</span>
                     </div>
-                    <div className=' flex  px-3 py-2 hover:bg-stone-100'>
-                      <div className='flex-shrink-0 border'>
-                        <img
-                          src='https://down-vn.img.susercontent.com/file/ff8ba949f891ef060a474c7319c36fbe_tn'
-                          alt='anh'
-                          className='h-11 w-11 object-cover'
-                        />
-                      </div>
-                      <span className='flex-shrink-1 mx-2 truncate text-sm'>
-                        Áo sơ mi tay dài nam nữ dáng rộng cao cấp vải nhung tăm DAVUBA SM004
-                      </span>
-                      <span className='text-sm text-orange'>₫129.000</span>
+                  ) : (
+                    <div className='flex h-[300px] w-[400px] flex-col items-center justify-center p-2'>
+                      <img
+                        src='https://deo.shopeemobile.com/shopee/shopee-pcmall-live-sg/assets/9bdd8040b334d31946f49e36beaf32db.png'
+                        alt='no-purchase'
+                        className='h-24 w-24'
+                      />
+                      <div className='mt-3 capitalize'>chưa có sản phẩm</div>
                     </div>
-                    <div className=' flex  px-3 py-2 hover:bg-stone-100'>
-                      <div className='flex-shrink-0 border'>
-                        <img
-                          src='https://down-vn.img.susercontent.com/file/ff8ba949f891ef060a474c7319c36fbe_tn'
-                          alt='anh'
-                          className='h-11 w-11 object-cover'
-                        />
-                      </div>
-                      <span className='flex-shrink-1 mx-2 truncate text-sm'>
-                        Áo sơ mi tay dài nam nữ dáng rộng cao cấp vải nhung tăm DAVUBA SM004
-                      </span>
-                      <span className='text-sm text-orange'>₫129.000</span>
-                    </div>
-                  </div>
-                  <div className='mb-3 mt-5 flex items-center justify-between px-3'>
-                    <span className='text-sm capitalize text-slate-500'>thêm hàng vào giỏ</span>
-                    <button className='rounded-sm bg-orange px-4 py-3 capitalize text-white hover:bg-red-400'>
-                      xem giỏ hàng
-                    </button>
-                  </div>
+                  )}
                 </div>
               }
             >
-              <Link to={path.home}>
+              <Link to={path.home} className='relative'>
                 <svg
                   xmlns='http://www.w3.org/2000/svg'
                   fill='none'
@@ -278,6 +133,11 @@ export default function Header() {
                     d='M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z'
                   />
                 </svg>
+                {purchasesInCart && (
+                  <span className='absolute left-[17px] top-[-5px] rounded-full bg-white px-[8px] py-[1px] text-xs text-orange'>
+                    {purchasesInCart?.length}
+                  </span>
+                )}
               </Link>
             </Popover>
           </div>
