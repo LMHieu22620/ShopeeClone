@@ -19,7 +19,6 @@ export default function Cart() {
   const location = useLocation()
 
   const choosenPurchaseIdFromLocation = (location.state as { purchaseId: string } | null)?.purchaseId
-  console.log(location, 'location', choosenPurchaseIdFromLocation)
 
   const { data: purchasesInCartData, refetch } = useQuery({
     queryKey: ['purchases', { status: purchasesStatus.inCart }],
@@ -61,12 +60,14 @@ export default function Cart() {
   useEffect(() => {
     setExtendedPurchases((prev) => {
       const extendedPurchasesObject = keyBy(prev, '_id')
+      console.log(prev, 'ssc')
+
       return (
         purchasesInCart?.map((purchase) => {
           const isChoosenPurchaseFromLocation = choosenPurchaseIdFromLocation === purchase._id
           return {
             ...purchase,
-            disable: false,
+            disabled: false,
             checked: isChoosenPurchaseFromLocation || Boolean(extendedPurchasesObject[purchase._id]?.checked)
           }
         }) || []
@@ -76,6 +77,7 @@ export default function Cart() {
 
   useEffect(() => {
     history.replaceState(null, '')
+    //xóa state checked
   }, [])
 
   const isChecked = extendedPurchases.every((purchase) => purchase.checked)
@@ -110,7 +112,7 @@ export default function Cart() {
       const purchase = extendedPurchases[purchaseIndex]
       setExtendedPurchases(
         produce((draft) => {
-          draft[purchaseIndex].disable = true
+          draft[purchaseIndex].disabled = true
         })
       )
       updatePurchaseMutation.mutate({ product_id: purchase.product._id, buy_count: value })
@@ -237,7 +239,7 @@ export default function Cart() {
                                   )
                                 }
                                 onType={handleTypeQuantity(index)}
-                                disabled={purchase.disable}
+                                disabled={purchase.disabled}
                                 classNameWrapper='flex items-center'
                               />
                             </div>

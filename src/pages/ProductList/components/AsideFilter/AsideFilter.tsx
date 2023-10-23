@@ -37,7 +37,6 @@ export default function AsideFilter({ queryConfig, categories }: Props) {
     resolver: yupResolver(priceSchema),
     shouldFocusError: false
   })
-  console.log(errors, 'errors')
 
   const navigate = useNavigate()
 

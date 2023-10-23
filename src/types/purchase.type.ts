@@ -16,6 +16,6 @@ export interface Purchase {
 }
 
 export interface ExtendPurChase extends Purchase {
-  disable: boolean
+  disabled: boolean
   checked: boolean
 }

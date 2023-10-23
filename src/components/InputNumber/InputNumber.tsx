@@ -27,6 +27,7 @@ const InputNumber = forwardRef<HTMLInputElement, InputNumberProps>(function Inpu
       onChange && onChange(event)
       // cập nhật local value state
 
+      //khi mà nhập số thì onchange nó mới cập nhập số và view lên chớ nhập chữ là nó k view và kh chạy
       setLocalValue(value)
     }
   }
